@@ -6,72 +6,72 @@ from sqlalchemy.exc import IntegrityError
 
 load_dotenv()
 
-app = Flask(__name__)
+application = Flask(__name__)
 
 DATABASE_URI = os.getenv("DATABASE_URI", "sqlite:///data.db")
-app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+application.config['SQLALCHEMY_DATABASE_URI'] = DATABASE.jsonify({"error": "Title and user identifier are required."}), 400ATABASE_URI
+application.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db = SQLAlchemy(app)
+database = SQLAlchemy(application)
 
-@app.before_request
-def before_request():
+@application.before_request
+def handle_json_request():
     if request.is_json:
         request.data = request.get_json()
 
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
+class User(database.Model):
+    id = database.Column(database.Integer, primary_key=True)
+    username = database.Column(database.String(80), unique=True, nullable=False)
 
-class Habit(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    user = db.relationship('User', backref=db.backref('habits', lazy=True))
+class Habit(database.Model):
+    id = database.Column(database.Integer, primary_key=True)
+    title = database.Column(database.String(100), nullable=False)
+    user_id = database.Column(database.Integer, database.ForeignKey('user.id'), nullable=False)
+    user = database.relationship('User', backref=database.backref('habits', lazy=True))
 
-db.create_all()
+database.create_all()
 
-@app.route('/users', methods=['POST', 'GET'])
-def manage_users():
+@application.route('/users', methods=['POST', 'GET'])
+def handle_users():
     if request.method == 'POST':
         try:
-            username = request.data['username']
-            if not username:
+            username_input = request.data['username']
+            if not username_input:
                 return jsonify({"error": "Username is required."}), 400
             
-            new_user = User(username=username)
-            db.session.add(new_user)
-            db.session.commit()
-            return jsonify({"message": "User created successfully", "id": new_user.id}), 201
+            new_user_record = User(username=username_input)
+            database.session.add(new_user_record)
+            database.session.commit()
+            return jsonify({"message": "User created successfully", "id": new_user_record.id}), 201
         except IntegrityError:
             return jsonify({"error": "This username is already taken."}), 409
     elif request.method == 'GET':
-        users = User.query.all()
-        return jsonify([{"id": user.id, "username": user.username} for user in users])
+        user_list = User.query.all()
+        return jsonify([{"id": user.id, "username": user.username} for user in user_list])
 
-@app.route('/habits', methods=['POST', 'GET'])
-def manage_habit():
+@application.route('/habits', methods=['POST', 'GET'])
+def handle_habits():
     if request.method == 'POST':
         try:
-            title = request.data.get('title')
-            user_id = request.data.get('user_id')
+            habit_title = request.data.get('title')
+            user_identifier = request.data.get('user_id')
             
-            if not title or not user_id:
-                return jsonify({"error": "Title and user ID are required."}), 400
+            if not habit_title or not user_identifier:
+                return jsonify({"error": "Title and user identifier are required."}), 400
 
-            if not User.query.get(user_id):
+            if not User.query.get(user_identifier):
                 return jsonify({"error": "User does not exist."}), 404
 
-            new_habit = Habit(title=title, user_id=user_id)
-            db.session.add(new_habit)
-            db.session.commit()
-            return jsonify({"message": "Habit created successfully", "id": new_habit.id}), 201
+            new_habit_record = Habit(title=habit_title, user_id=user_identifier)
+            database.session.add(new_habit_record)
+            database.session.commit()
+            return jsonify({"message": "Habit created successfully", "id": new_habit_record.id}), 201
         except IntegrityError:
-            db.session.rollback()
+            database.session.rollback()
             return jsonify({"error": "Failed to create habit."}), 409
     elif request.method == 'GET':
-        habits = Habit.query.all()
-        return jsonify([{"id": habit.id, "title": habit.title, "user_id": habit.user_id} for habit in habits])
+        habit_list = Habit.query.all()
+        return jsonify([{"id": habit.id, "title": habit.title, "user_id": habit.user_id} for habit in habit_list])
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    application.run(debug=True, port=5000)
