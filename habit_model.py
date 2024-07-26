@@ -11,7 +11,7 @@ db = SQLAlchemy(app)
 
 class User(db.Model):
     __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_state=True)
+    id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     habits = db.relationship('Habit', backref='user', lazy=True)
 
@@ -41,27 +41,34 @@ class HabitLog(db.Model):
         return f"<HabitLog {self.date} - Status: {self.status}>"
 
 @app.route('/habit', methods=['POST'])
-def add_habit():
-    data = request.get_json()
-    new_habit = Habit(name=data['name'], description=data['description'], user_id=data['user_id'])
+def create_habit():
+    habit_data = request.get_json()
+    new_habit = Habit(
+        name=habit_data['name'], 
+        description=habit_data['description'], 
+        user_id=habit_data['user_id']
+    )
     db.session.add(new_habit)
     db.session.commit()
     return jsonify({'message': 'New habit created!'}), 201
 
 @app.route('/habit/log', methods=['POST'])
-def log_habit():
-    data = request.get_json()
-    new_log = HabitLog(habit_id=data['habit_id'], status=data['status'])
-    db.session.add(new_log)
+def create_habit_log():
+    log_data = request.get_json()
+    new_habit_log = HabitLog(
+        habit_id=log_data['habit_id'], 
+        status=log_config['status']
+    )
+    db.session.add(new_habit_log)
     db.session.commit()
     return jsonify({'message': 'Habit status logged!'}), 201
 
-@app.route('/habits/<int:user_id>', methods=['GET'])
-def get_habits(user_id):
-    habits = Habit.query.filter_by(user_id=user_id).all()
-    return jsonify({'habits': [str(habit) for habit in habits]})
+@app.route('/user/<int:user_id>/habits', methods=['GET'])
+def get_user_habits(user_id):
+    user_habits = Habit.query.filter_by(user_id=user_id).all()
+    return jsonify({'habits': [str(habit) for habit in user_habits]})
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        app.run(debug=True)
+    app.run(debug=True)
