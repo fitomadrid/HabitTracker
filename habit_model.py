@@ -43,30 +43,51 @@ class HabitLog(db.Model):
 @app.route('/habit', methods=['POST'])
 def create_habit():
     habit_data = request.get_json()
-    new_habit = Habit(
-        name=habit_data['name'], 
-        description=habit_data['description'], 
-        user_id=habit_data['user_id']
-    )
-    db.session.add(new_habit)
-    db.session.commit()
-    return jsonify({'message': 'New habit created!'}), 201
+    if not habit_data:
+        return jsonify({'error': 'No input data provided'}), 400
+    
+    try:
+        new_habit = Habit(
+            name=habit_data['name'],
+            description=habit_data.get('description', ''),  
+            user_id=habit_data['user_id']
+        )
+        db.session.add(new_habit)
+        db.session.commit()
+        return jsonify({'message': 'New habit created!'}), 201
+    except KeyError as e:
+        return jsonify({'error': f'Missing data: {e}'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/habit/log', methods=['POST'])
 def create_habit_log():
     log_data = request.get_json()
-    new_habit_log = HabitLog(
-        habit_id=log_data['habit_id'], 
-        status=log_config['status']
-    )
-    db.session.add(new_habit_log)
-    db.session.commit()
-    return jsonify({'message': 'Habit status logged!'}), 201
+    if not log_data:
+        return jsonify({'error': 'No input data provided'}), 400
+    
+    try:
+        new_habit_log = HabitLog(
+            habit_id=log_data['habit_id'],
+            status=log_data['status']
+        )
+        db.session.add(new_habit_log)
+        db.session.commit()
+        return jsonify({'message': 'Habit status logged!'}), 201
+    except KeyError as e:
+        return jsonify({'error': f'Missing data: {e}'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/user/<int:user_id>/habits', methods=['GET'])
 def get_user_habits(user_id):
-    user_habits = Habit.query.filter_by(user_id=user_id).all()
-    return jsonify({'habits': [str(habit) for habit in user_habits]})
+    try:
+        user_habits = Habit.query.filter_by(user_id=user_id).all()
+        if not user_habits:
+            return jsonify({'error': 'User or habits not found'}), 404
+        return jsonify({'habits': [str(habit) for habit in user_habits]})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     with app.app_context():
