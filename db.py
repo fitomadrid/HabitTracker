@@ -5,13 +5,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///your_default_db_name.db")
+DB_CONNECTION_URI = os.getenv("DB_CONNECTION_URI", "sqlite:///default_habit_tracker.db")
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+database_engine = create_engine(DB_CONNECTION_URI, connect_args={"check_same_thread": False})
 
-db_session = scoped_session(sessionmaker(autocommit=False,
-                                         autoflush=False,
-                                         bind=engine))
+database_session_scoped = scoped_session(sessionmaker(autocommit=False,
+                                                      autoflush=False,
+                                                      bind=database_engine))
 
-def get_db_session():
-    return db_session
+def get_database_session():
+    return database_session_scoped
