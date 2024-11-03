@@ -1,58 +1,67 @@
 import axios from 'axios';
 require('dotenv').config();
-const BASE_URL = process.env.REACT_APP_API_URL;
-async function fetchHabits() {
+
+const API_BASE_URL = process.env.REACT_APP_API_URL;
+
+async function retrieveHabitsFromServer() {
   try {
-    const response = await axios.get(`${BASE_URL}/habits`);
-    displayHabits(response.data);
+    const response = await axios.get(`${API_BASE_URL}/habits`);
+    renderHabitsToDOM(response.data);
   } catch (error) {
-    console.error("Error fetching habits:", error);
+    console.error("Error retrieving habits:", error);
   }
 }
-function displayHabits(habits) {
-  const habitsContainer = document.getElementById('habits-container');
-  habitsContainer.innerHTML = '';
-  habits.forEach(habit => {
-    const habitElement = document.createElement('div');
-    habitElement.textContent = habit.name;
-    habitsContainer.appendChild(habitElement);
+
+function renderHabitsToDOM(habitsList) {
+  const habitsListContainer = document.getElementById('habits-container');
+  habitsListContainer.innerHTML = '';
+  habitsList.forEach(habit => {
+    const habitDiv = document.createElement('div');
+    habitDiv.textContent = habit.name;
+    habitsListContainer.appendChild(habitDiv);
   });
 }
-async function addHabit(habitData) {
+
+async function submitNewHabit(habitDetails) {
   try {
-    await axios.post(`${BASE_URL}/habits`, habitData);
-    fetchHabits();
+    await axios.post(`${API_BASE_URL}/habits`, habitDetails);
+    retrieveHabitsFromServer(); // Refresh the list
   } catch (error) {
-    console.error("Error adding habit:", error);
+    console.error("Error submitting new habit:", error);
   }
 }
-async function updateHabit(id, updatedData) {
+
+async function updateExistingHabit(habitId, habitUpdates) {
   try {
-    await axios.put(`${BASE_URL}/habits/${id}`, updatedData);
-    fetchHabits();
+    await axios.put(`${API_BASE_URL}/habits/${habitId}`, habitUpdates);
+    retrieveHabitsFromServer(); // Refresh the list
   } catch (error) {
     console.error("Error updating habit:", error);
   }
 }
-async function deleteHabit(id) {
+
+async function removeHabitById(habitId) {
   try {
-    await axios.delete(`${BASE_URL}/habits/${id}`);
-    fetchHabits();
+    await axios.delete(`${API_BASE_URL}/habits/${habitId}`);
+    retrieveHabitsFromServer(); // Refresh the list
   } catch (error) {
-    console.error("Error deleting habit:", error);
+    console.error("Error removing habit:", error);
   }
 }
-function setupEventListeners() {
+
+function attachEventListenersToForms() {
   document.getElementById('add-habit-form').addEventListener('submit', function(e) {
     e.preventDefault();
-    const habitData = {
+    const newHabitDetails = {
       name: e.target.elements.name.value,
     };
-    addHabit(habitData);
+    submitNewHabit(newHabitDetails);
   });
 }
-function initApp() {
-  fetchHabits();
-  setupEventListeners();
+
+function initializeHabitTrackerApp() {
+  retrieveHabitsFromServer();
+  attachEventListenersToForms();
 }
-window.onload = initApp;
+
+window.onload = initializeHabitTrackerApp;
