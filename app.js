@@ -17,7 +17,28 @@ function renderHabitsToDOM(habitsList) {
   habitsListContainer.innerHTML = '';
   habitsList.forEach(habit => {
     const habitDiv = document.createElement('div');
-    habitDiv.textContent = habit.name;
+
+    const habitNameSpan = document.createElement('span'); // For the habit name
+    habitNameSpan.textContent = habit.name;
+    habitDiv.appendChild(habitNameSpan);
+
+    const habitEditButton = document.createElement('button'); // For editing habit
+    habitEditButton.textContent = 'Edit';
+    habitEditButton.onclick = function() {
+      const newHabitName = prompt('Enter new habit name', habit.name);
+      if (newHabitName) {
+        updateExistingHabit(habit.id, { name: newHabitName });
+      }
+    };
+    habitDiv.appendChild(habitEditButton);
+
+    const habitDeleteButton = document.createElement('button'); // For deleting habit
+    habitDeleteButton.textContent = 'Delete';
+    habitDeleteButton.onclick = function() {
+      removeHabitById(habit.id);
+    };
+    habitDiv.appendChild(habitDeleteButton);
+
     habitsListContainer.appendChild(habitDiv);
   });
 }
