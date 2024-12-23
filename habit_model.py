@@ -1,13 +1,22 @@
+pip install Flask-Caching
+```
+
+```python
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask, request, jsonify
+from flask_caching import Cache
 from datetime import datetime
 import os
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Setting up simple cache with default timeout
+app.config['CACHE_TYPE'] = 'simple'
+app.config['CACHE_DEFAULT_TIMEOUT'] = 300
 
 db = SQLAlchemy(app)
+cache = Cache(app)
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -80,6 +89,7 @@ def create_habit_log():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/user/<int:user_id>/habits', methods=['GET'])
+@cache.memoize(timeout=60)  # Cache this endpoint's response for 60 seconds
 def get_user_habits(user_id):
     try:
         user_habits = Habit.query.filter_by(user_id=user_id).all()
