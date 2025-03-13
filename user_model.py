@@ -1,9 +1,12 @@
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import SQLAlchemyError
+from flask_caching import Cache
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///habittracker.db'
+app.config['CACHE_TYPE'] = 'simple'  # Consider using 'redis' or 'memcached' for production
+cache = Cache(app)
 db = SQLAlchemy(app)
 
 class User(db.Model):
@@ -28,6 +31,7 @@ def handle_sqlalchemy_error(error):
 
 @app.route('/add_user', methods=['POST'])
 def add_user():
+    cache.delete_memoized(get_users)  # Invalidate cache whenever a new user is added
     try:
         username = request.json['username']
         if not username:
@@ -44,10 +48,12 @@ def add_user():
         handle_sqlalchemy_error(e)
 
 @app.route('/users', methods=['GET'])
+@cache.memoize(60)  # Cache the result of this endpoint for 60 seconds
 def get_users():
     try:
         users = User.query.all()
-        return jsonify([{'id': user.id, 'username': user.username} for user in users])
+        users_response = [{'id': user.id, 'username': user.username} for user in users]
+        return jsonify(users_response)
     except SQLAlchemyError as e:
         handle_sqlalchemy_error(e)
 
